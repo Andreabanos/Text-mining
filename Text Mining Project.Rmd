@@ -1,0 +1,87 @@
+---
+title: "Untitled"
+author: "Andrea Baños"
+date: "2024-03-15"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load the main libraries
+
+```{r}
+library(tidyverse)
+library(tidytext)
+library(ggplot2)
+
+```
+
+
+## Download the data and select the important variables
+
+```{r}
+bts_lyrics <- read.csv("lyrics-v12.csv")
+library(tidyverse)
+bts_lyrics <- bts_lyrics %>% 
+  select(c(eng_album_title, album_rd, album_seq, eng_track_title, lyrics))
+
+```
+
+## Correct a little error
+
+```{r}
+bts_lyrics$lyrics <- iconv(bts_lyrics$lyrics, from = "", to = "UTF-8", sub = " ") # para corregir el error, pero igual no es necesario
+
+```
+
+## Relocate the lyrics in rows
+
+```{r}
+bts_row_lyrics <- bts_lyrics %>%
+  separate_rows(lyrics, sep = "\n") %>%
+  group_by(eng_track_title) %>%
+  mutate(line_number = row_number()) %>%
+  ungroup()
+
+```
+
+## Tokenizing
+
+```{r}
+tidy_bts_lyrics <- bts_row_lyrics %>%
+  unnest_tokens(word, lyrics)
+
+```
+
+## Filtering stopwords
+
+```{r}
+tidy_bts_lyrics <- tidy_bts_lyrics %>%
+  anti_join(stop_words)
+
+```
+
+## Counting word frequencies
+
+```{r}
+tidy_bts_lyrics %>%
+  count(word, sort = TRUE)
+
+```
+
+```{r}
+# A plot showing the number of repeated words
+tidy_bts_lyrics %>%
+  count(word, sort = TRUE) %>%
+  filter(n > 300) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(n, word)) +
+  geom_col() +
+  labs(y = NULL) # mensajes contradictorios amor y no puedo, quiero y no
+
+```
+
+
+
